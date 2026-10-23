@@ -15,13 +15,17 @@ for entry in manifest['archives']:
  with tarfile.open(archive,'r:gz') as tar:
   for member in tar:
    target=(ROOT/member.name).resolve()
-   if not target.is_relative_to(ROOT) or not member.isfile():raise SystemExit('Unsafe archive member: '+member.name)
+   if not target.is_relative_to(ROOT) or not (member.isfile() or member.islnk()):raise SystemExit('Unsafe archive member: '+member.name)
    if target.exists():
     expected=next(f for f in entry['files'] if f['path']==member.name)
     if digest(target)!=expected['sha256']:raise SystemExit('Existing modified file; refusing to overwrite: '+str(target))
     continue
    target.parent.mkdir(parents=True,exist_ok=True)
-   with tar.extractfile(member) as source, target.open('wb') as destination:
+   if member.islnk():
+    linked=(ROOT/member.linkname).resolve()
+    if not linked.is_relative_to(ROOT) or not linked.is_file(): raise SystemExit('Invalid hardlink: '+member.name)
+   source = linked.open('rb') if member.islnk() else tar.extractfile(member)
+   with source, target.open('wb') as destination:
     for chunk in iter(lambda:source.read(8*1024*1024),b''):destination.write(chunk)
  for item in entry['files']:
   if digest(ROOT/item['path'])!=item['sha256']: raise SystemExit('Checksum mismatch: '+item['path'])
