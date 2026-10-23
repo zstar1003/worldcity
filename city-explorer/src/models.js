@@ -3,7 +3,7 @@ import { CityReflections } from './reflections.js';
 import { TileStream } from './tile-stream.js';
 import { SpatialMaterials } from './spatial-materials.js';
 import { restoreSourceMaterial, patchSourceMaterial, physicalSourceKey } from './source-materials.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { assetURL, fetchAsset, loadGLB } from './assets.js';
 import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
 import { acceleratedRaycast, computeBoundsTree, disposeBoundsTree } from 'three-mesh-bvh';
 
@@ -31,7 +31,7 @@ export function disposeObject(root) {
 export class CityModel {
   constructor(id, scene, renderer, camera) {
     this.id = id; this.scene = scene; this.renderer = renderer; this.camera = camera; this.disposeTree = disposeObject;
-    this.base = `/cities/${id}/`; this.root = new THREE.Group();
+    this.base = assetURL(`cities/${id}/`); this.root = new THREE.Group();
     this.root.name = `City ${id}`; this.meshes = []; this.foliageGroups = [];
     this.disposed = false; this.navigationReady = false; this.detailPromise = null;
     this.reflections = new CityReflections(renderer, scene);
@@ -39,12 +39,12 @@ export class CityModel {
   }
 
   async load(progress) {
-    const response = await fetch(`${this.base}city.json`);
+    const response = await fetchAsset(`${this.base}city.json`);
     if (!response.ok) throw new Error('这座城市的模型仍在准备，请稍后重试');
     this.meta = await response.json();
-    this.overrides = this.meta.files.materials ? await fetch(this.base + this.meta.files.materials).then((r) => r.json()) : { materials: {} };
-    const manifest = await fetch(this.base + 'stream/tiles.json').then((r) => { if (!r.ok) throw new Error('高清分块尚未准备完成'); return r.json(); });
-    const [details, transforms, renderSettings] = await Promise.all(['spatial-materials.json','object-transforms.json','render-settings.json'].map((file)=>fetch(this.base+file).then((r)=>{if(!r.ok)throw new Error('原材质细节清单尚未准备好');return r.json();})));
+    this.overrides = this.meta.files.materials ? await fetchAsset(this.base + this.meta.files.materials).then((r) => r.json()) : { materials: {} };
+    const manifest = await fetchAsset(this.base + 'stream/tiles.json').then((r) => { if (!r.ok) throw new Error('高清分块尚未准备完成'); return r.json(); });
+    const [details, transforms, renderSettings] = await Promise.all(['spatial-materials.json','object-transforms.json','render-settings.json'].map((file)=>fetchAsset(this.base+file).then((r)=>{if(!r.ok)throw new Error('原材质细节清单尚未准备好');return r.json();})));
     if (this.disposed) return;
     this.renderSettings = renderSettings;
     this.spatialMaterials = new SpatialMaterials(this.base, details, transforms, this.renderer);
@@ -59,7 +59,7 @@ export class CityModel {
     progress('还原天空与城市植被', 0.8);
     const [environment, instances] = await Promise.all([
       new HDRLoader().loadAsync(this.base + this.meta.files.environment),
-      fetch(this.base + this.meta.files.instances).then((r) => r.json()),
+      fetchAsset(this.base + this.meta.files.instances).then((r) => r.json()),
     ]);
     if (this.disposed) { environment.dispose(); disposeObject(this.root); return; }
     environment.mapping = THREE.EquirectangularReflectionMapping;
@@ -128,9 +128,8 @@ export class CityModel {
   async loadNearFoliage(progress = () => {}) {
     if (this.detailPromise) return this.detailPromise;
     this.detailPromise = (async () => {
-      const gltf = await new GLTFLoader().loadAsync(this.base + this.meta.files.foliage, (event) => {
-        if (event.total) progress(event.loaded / event.total);
-      });
+      const gltf = await loadGLB(this.base + this.meta.files.foliage);
+      progress(1);
       if (this.disposed) { disposeObject(gltf.scene); return; }
       this.foliageSource = gltf.scene;
       gltf.scene.updateMatrixWorld(true);

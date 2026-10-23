@@ -6,8 +6,14 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 4173 --strictPort",
     "build": "vite build",
-    "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort"
+    "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
+    "build:pages": "vite build --mode pages"
   },
-  "dependencies": {"three": "0.180.0", "three-mesh-bvh": "0.9.1"},
-  "devDependencies": {"vite": "7.1.7"}
+  "dependencies": {
+    "three": "0.180.0",
+    "three-mesh-bvh": "0.9.1"
+  },
+  "devDependencies": {
+    "vite": "7.1.7"
+  }
 }

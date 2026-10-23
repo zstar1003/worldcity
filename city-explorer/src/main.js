@@ -1,3 +1,4 @@
+import { initializeAssets } from './assets.js';
 import './style.css';
 import * as THREE from 'three';
 import { createScene } from './scene.js';
@@ -11,6 +12,7 @@ const cities = [
   { id: 'shenzhen', name: '深圳', english: 'SHENZHEN', district: '福田中心区', description: '在摩天楼与街道之间，重新发现城市。' },
 ];
 const $ = (id) => document.getElementById(id);
+await initializeAssets();
 const app = createScene($('viewport'));
 let model = null, loading = false, sequence = 0, quality = 'high', currentCity;
 let navigationBusy = false, toastTimer, lastFpsTime = 0, frameCount = 0, fps = 0;
@@ -147,7 +149,7 @@ function showDetails() {
     <div class="stat-grid"><div><strong>${(triangles / 1e6).toFixed(2)} M</strong><span>建筑三角面 · 未做减面</span></div><div><strong>${Math.round(model.meta.filesBytes['architecture.glb'] / 1048576)} MB</strong><span>完整建筑资源</span></div><div><strong>${Number(counts.foliageInstances).toLocaleString()}</strong><span>原场景植被实例</span></div><div><strong>${fps} FPS</strong><span>当前浏览器实测</span></div></div>
     <p>建筑按视野逐块加载、提前加载周边区域，离开后释放；不减面、不量化。近处使用原始树木网格，远处使用原树渲染的透明图像。</p>
     <p>原有图片纹理保留原尺寸；程序化窗格、铺装和草地从原节点烘焙，按距离加载 256 / 1024 / 2048 纹理。微表面噪声重复方式、玻璃和间接光与离线 Cycles 仍有差异。第一、第三人称使用建筑三角面碰撞和实际地面高度。</p>
-    <p>“原生高清”使用屏幕原生分辨率；“流畅显示”降低屏幕采样并关闭实时阴影，不改动源文件。全部城市资源由本机提供，没有上传云端。</p>`);
+    <p>“原生高清”使用屏幕原生分辨率；“流畅显示”降低屏幕采样并关闭实时阴影，不改动源文件。城市资源按视野动态加载，建筑几何和纹理保留原有精度。</p>`);
 }
 
 cities.forEach((city, index) => {

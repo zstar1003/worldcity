@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { calibrateArmPose, transferLocomotion } from './character-animation.js';
 import { JumpPhysics, poseJump, walkableSurface } from './jump-physics.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { assetURL, loadGLB } from './assets.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 export class Navigation {
@@ -24,7 +24,7 @@ export class Navigation {
 
   createAvatar() {
     const group = new THREE.Group();
-    this.avatarReady = Promise.all([new GLTFLoader().loadAsync('/characters/rocketbox-male-09/tourist.glb'), new GLTFLoader().loadAsync('/characters/traveler.glb')]).then(([gltf, motion]) => {
+    this.avatarReady = Promise.all([loadGLB(assetURL('characters/rocketbox-male-09/tourist.glb')), loadGLB(assetURL('characters/traveler.glb'))]).then(([gltf, motion]) => {
       const person = gltf.scene;
       const bounds = new THREE.Box3().setFromObject(person);
       const scale = 1.78 / bounds.getSize(new THREE.Vector3()).y;

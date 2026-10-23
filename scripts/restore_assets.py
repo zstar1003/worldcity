@@ -1,14 +1,18 @@
 """Restore and verify the lossless city archives after git lfs pull."""
 from pathlib import Path
-import tarfile,json,hashlib
+import tarfile,json,hashlib,argparse
 ROOT=Path(__file__).resolve().parents[1]
 def digest(p):
  h=hashlib.sha256()
  with p.open('rb') as f:
   for chunk in iter(lambda:f.read(8*1024*1024),b''): h.update(chunk)
  return h.hexdigest()
+parser=argparse.ArgumentParser()
+parser.add_argument('--browser-only', action='store_true')
+args=parser.parse_args()
 manifest=json.loads((ROOT/'archives/manifest.json').read_text())
 for entry in manifest['archives']:
+ if args.browser_only and not Path(entry['archive']).name.startswith('browser-'):continue
  archive=ROOT/entry['archive']
  if archive.stat().st_size != entry['bytes'] or digest(archive)!=entry['sha256']:
   raise SystemExit(f'Archive missing/corrupt: {archive.name}. Run git lfs pull first.')

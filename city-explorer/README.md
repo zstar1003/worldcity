@@ -60,3 +60,20 @@ Idle / Walk / Run 动作继续使用 Three.js r180 示例 Soldier.glb（示例�
 玻璃恢复原镀膜 IOR/F0、镀膜下层吸收颜色；广州自定义 Transparent/Glossy 材质不再转换为金属漆，保留透明分支、原混合反射强度和颜色。Fresnel 混合使用 Schlick 近似，不等同于完整 Cycles 节点图。天空反射按原角度旋转，取消额外半球补光。反向深度阴影在首次绘制前初始化。
 
 玻璃使用 1024 像素本地立方体反射探针：进入全景/地标时采集已加载的建筑，行走跨越 100 米后停下且分块载完时更新。原 HDR 继续照明场景。探针关闭人物并回到原 HDR 采集，避免自反射反馈；它是附近场景反射的近似，不能提供逐表面准确的光线追踪和不可见/未加载建筑反射。
+
+## GitHub Pages 部署
+
+推送 main 后，`.github/workflows/pages.yml` 自动下载并校验五个 browser 归档、运行测试，再发布四城网站。原始 Blender 工程保留在仓库 LFS 归档中，不进入网页发布包。
+
+Pages 使用 `/worldcity/` 路径。`scripts/prepare_pages.py` 对运行时 GLB、JSON、LUT 二进制使用 gzip 无损压缩，并按 SHA-256 合并完全相同的资源；每份压缩资源都校验解压字节与原件一致。不会减面、量化顶点或缩小贴图。未使用的整城 architecture.glb 副本和旧角色不进入部署包。浏览器通过 DecompressionStream 解压后，继续按原有视野分块加载。发布体积约 968 MiB，接近 Pages 的容量上限。
+
+本地复现线上构建：
+
+```sh
+python3 scripts/prepare_pages.py
+cd city-explorer
+npm run build:pages
+npx vite preview --outDir dist-pages --base /worldcity/
+```
+
+首次加载需要下载当前视野的高清模型，速度受网络和设备性能影响；建议使用桌面端现代浏览器。此站点为 WebGL 实时渲染，并不等同于 Blender 离线渲染效果。

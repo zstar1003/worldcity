@@ -1,3 +1,4 @@
+import { assetURL, fetchAsset } from './assets.js';
 import * as THREE from 'three';
 import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 
@@ -65,10 +66,10 @@ export class TemporalResolve {
     this.quad = new FullScreenQuad(this.resolve);
   }
   async loadDisplayTransform() {
-    const response = await fetch('/render/agx-medium-high.json');
+    const response = await fetchAsset(assetURL('render/agx-medium-high.json'));
     if (!response.ok) throw new Error('原渲染色彩配置加载失败');
     const config = await response.json();
-    const binary = await fetch('/render/' + config.texture.url);
+    const binary = await fetchAsset(assetURL('render/' + config.texture.url));
     if (!binary.ok) throw new Error('原渲染色彩曲线加载失败');
     const buffer = await binary.arrayBuffer();
     if (buffer.byteLength !== config.size ** 3 * 8) throw new Error('色彩曲线数据不完整');

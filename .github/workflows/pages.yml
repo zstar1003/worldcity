@@ -1,0 +1,50 @@
+name: Deploy City Walk to Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: city-explorer/package-lock.json
+      - name: Download only browser assets
+        run: git lfs pull --include='archives/browser-*.tar.gz' --exclude=''
+      - name: Restore and verify browser assets
+        run: python3 scripts/restore_assets.py --browser-only
+      - run: npm ci
+        working-directory: city-explorer
+      - run: node --test tests/*.test.mjs
+        working-directory: city-explorer
+      - name: Prepare lossless compressed assets
+        run: python3 scripts/prepare_pages.py
+      - run: npm run build:pages
+        working-directory: city-explorer
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: city-explorer/dist-pages
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

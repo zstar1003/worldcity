@@ -4,3 +4,6 @@ public/cities/
 audit/
 *.log
 .DS_Store
+
+.pages-public/
+dist-pages/

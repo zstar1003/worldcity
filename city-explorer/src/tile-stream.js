@@ -1,3 +1,4 @@
+import { fetchAsset } from './assets.js';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { batchTile } from './tile-batch.js';
@@ -36,7 +37,7 @@ export class TileStream {
   }
   async fetchTile(tile,signal) {
     const base=this.owner.base+'stream/';
-    const response=await fetch(base+tile.url,{signal}); if(!response.ok)throw new Error(`HTTP ${response.status}: ${tile.url}`);
+    const response=await fetchAsset(base+tile.url,{signal}); if(!response.ok)throw new Error(`HTTP ${response.status}: ${tile.url}`);
     const buffer=await response.arrayBuffer(); if(this.disposed)return;
     const gltf=await new GLTFLoader().parseAsync(buffer,base);
     if(this.disposed){this.owner.disposeTree(gltf.scene);return;}
